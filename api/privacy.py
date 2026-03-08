@@ -21,19 +21,19 @@ def get_db():
 
 class ThresholdProofRequest(BaseModel):
     username: str
-    threshold: float
+    threshold: int
 
 class SelectiveDisclosureRequest(BaseModel):
     username: str
     selected_indices: List[int]
 
 @router.post("/privacy/prove-threshold", response_model=ZKProof)
-def prove_reputation_threshold(request: ThresholdProofRequest, db: Session = Depends(get_db)):
+def prove_attestation_threshold(request: ThresholdProofRequest, db: Session = Depends(get_db)):
     """
-    Generate a zero-knowledge proof that user's reputation exceeds a threshold.
-    Does not reveal exact reputation score.
+    Generate a zero-knowledge proof that a user's attestation count meets a threshold.
+    Does not reveal the exact number of attestations.
     """
-    # Get user's reputation
+    # Verify user exists
     identity = db.query(UserIdentityModel).filter(
         UserIdentityModel.username == request.username
     ).first()
@@ -41,9 +41,14 @@ def prove_reputation_threshold(request: ThresholdProofRequest, db: Session = Dep
     if not identity:
         raise HTTPException(status_code=404, detail="User not found")
     
+    # Count attestations for this user
+    attestation_count = db.query(AttestationModel).filter(
+        AttestationModel.subject == request.username
+    ).count()
+    
     # Generate ZK proof
     proof_string, meets_threshold = generate_zk_proof(
-        identity.reputation_score,
+        attestation_count,
         request.threshold
     )
     
@@ -54,9 +59,9 @@ def prove_reputation_threshold(request: ThresholdProofRequest, db: Session = Dep
     )
 
 @router.post("/privacy/verify-threshold")
-def verify_reputation_threshold(proof_data: ZKProof):
+def verify_attestation_threshold(proof_data: ZKProof):
     """
-    Verify a zero-knowledge proof without learning the actual reputation.
+    Verify a zero-knowledge proof without learning the actual attestation count.
     """
     is_valid = verify_zk_proof(
         proof_data.proof,
@@ -78,7 +83,7 @@ def create_selective_disclosure(request: SelectiveDisclosureRequest, db: Session
     """
     # Get all user attestations
     attestations = db.query(AttestationModel).filter(
-        AttestationModel.to_user == request.username
+        AttestationModel.subject == request.username
     ).all()
     
     if not attestations:
@@ -89,10 +94,9 @@ def create_selective_disclosure(request: SelectiveDisclosureRequest, db: Session
     for att in attestations:
         attestation_list.append({
             "id": att.id,
-            "from_user": att.from_user,
-            "to_user": att.to_user,
-            "value": att.value,
-            "context": att.context,
+            "issuer": att.issuer,
+            "subject": att.subject,
+            "attestation_type": att.attestation_type,
             "timestamp": str(att.timestamp)
         })
     
@@ -110,37 +114,4 @@ def create_selective_disclosure(request: SelectiveDisclosureRequest, db: Session
         "username": request.username,
         "proof": disclosure_proof,
         "message": "Selective disclosure proof created"
-    }
-
-@router.get("/privacy/reputation-bands/{username}")
-def get_reputation_band(username: str, db: Session = Depends(get_db)):
-    """
-    Return reputation in broad bands instead of exact score for privacy.
-    E.g., "0-10", "10-50", "50-100", "100-500", "500+"
-    """
-    identity = db.query(UserIdentityModel).filter(
-        UserIdentityModel.username == username
-    ).first()
-    
-    if not identity:
-        raise HTTPException(status_code=404, detail="User not found")
-    
-    reputation = identity.reputation_score
-    
-    # Define reputation bands
-    if reputation < 10:
-        band = "0-10"
-    elif reputation < 50:
-        band = "10-50"
-    elif reputation < 100:
-        band = "50-100"
-    elif reputation < 500:
-        band = "100-500"
-    else:
-        band = "500+"
-    
-    return {
-        "username": username,
-        "reputation_band": band,
-        "message": "Reputation shown in bands for privacy"
     }

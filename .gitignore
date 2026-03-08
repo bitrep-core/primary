@@ -53,6 +53,7 @@ cover/
 
 # Test databases
 test_bitrep.db
+bitrep.db
 
 # Translations
 *.mo

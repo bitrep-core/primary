@@ -1,6 +1,6 @@
 # Identity model for user authentication and verification
 
-from sqlalchemy import Column, Integer, String, Boolean, Float, DateTime
+from sqlalchemy import Column, Integer, String, Boolean, DateTime
 from datetime import datetime
 from db.connection import Base
 
@@ -12,6 +12,5 @@ class UserIdentityModel(Base):
     public_key = Column(String, unique=True)
     private_key_hash = Column(String)  # Store hash, not actual private key
     verified = Column(Boolean, default=False)
-    reputation_score = Column(Float, default=0.0)
     created_at = Column(DateTime, default=datetime.utcnow)
     last_updated = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

@@ -34,7 +34,6 @@ class ThirdPartyAttestationOut(BaseModel):
     attestation_type: str
     value: float
     verified: int
-    weight: float
     
     model_config = {"from_attributes": True}
 
@@ -60,8 +59,7 @@ def import_third_party_attestation(attestation: ThirdPartyAttestationCreate, db:
         attestation_type=attestation.attestation_type,
         value=attestation.value,
         attestation_metadata=json.dumps(attestation.metadata),
-        verified=0,  # Pending verification
-        weight=0.5  # Platform attestations weighted lower
+        verified=0  # Pending verification
     )
     
     db.add(new_attestation)
@@ -157,8 +155,7 @@ def import_github_profile(username: str, github_username: str, db: Session = Dep
     # In production, this would:
     # 1. Authenticate with GitHub OAuth
     # 2. Fetch user's commit history, PRs, reviews
-    # 3. Calculate reputation score based on contributions
-    # 4. Create attestations for verified activities
+    # 3. Create binary attestations for verified activities
     
     # Placeholder implementation
     identity = db.query(UserIdentityModel).filter(
@@ -176,8 +173,7 @@ def import_github_profile(username: str, github_username: str, db: Session = Dep
         attestation_type="commits",
         value=10.0,  # Placeholder value
         attestation_metadata=json.dumps({"note": "Sample GitHub import"}),
-        verified=0,
-        weight=0.5
+        verified=0
     )
     
     db.add(github_attestation)

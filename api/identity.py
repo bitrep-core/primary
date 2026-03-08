@@ -39,8 +39,7 @@ def create_identity(user_data: UserIdentityCreate, db: Session = Depends(get_db)
         username=user_data.username,
         public_key=public_key,
         private_key_hash=hash_private_key(private_key),
-        verified=False,
-        reputation_score=0.0
+        verified=False
     )
     
     db.add(identity)
@@ -69,8 +68,7 @@ def get_identity(username: str, db: Session = Depends(get_db)):
     return UserIdentity(
         username=identity.username,
         public_key=identity.public_key,
-        verified=identity.verified,
-        reputation_score=identity.reputation_score
+        verified=identity.verified
     )
 
 @router.post("/identity/{username}/verify")

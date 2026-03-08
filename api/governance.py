@@ -9,7 +9,6 @@ from models.identity import UserIdentityModel
 from pydantic import BaseModel
 from typing import List
 from datetime import datetime, timedelta
-import math
 
 router = APIRouter()
 
@@ -43,22 +42,6 @@ class VoteCreate(BaseModel):
     proposal_id: int
     voter: str
     support: int  # 1 for yes, -1 for no
-
-def calculate_quadratic_vote_weight(reputation: float) -> float:
-    """
-    Calculate vote weight using quadratic scaling to prevent plutocratic capture.
-    
-    Args:
-        reputation: User's reputation score (must be non-negative)
-        
-    Returns:
-        Quadratic vote weight
-    """
-    # Ensure reputation is non-negative to avoid complex numbers
-    if reputation < 0:
-        reputation = 0
-    
-    return math.sqrt(reputation)
 
 @router.post("/governance/proposal", response_model=ProposalOut)
 def create_proposal(proposal: ProposalCreate, db: Session = Depends(get_db)):
@@ -118,7 +101,7 @@ def get_proposal(proposal_id: int, db: Session = Depends(get_db)):
 @router.post("/governance/vote")
 def cast_vote(vote: VoteCreate, db: Session = Depends(get_db)):
     """
-    Cast a reputation-weighted vote on a proposal.
+    Cast a vote on a proposal (one vote per identity).
     """
     # Check if proposal exists and is active
     proposal = db.query(GovernanceProposalModel).filter(
@@ -145,7 +128,7 @@ def cast_vote(vote: VoteCreate, db: Session = Depends(get_db)):
     if existing_vote:
         raise HTTPException(status_code=400, detail="Already voted on this proposal")
     
-    # Get voter's reputation
+    # Verify voter identity exists
     identity = db.query(UserIdentityModel).filter(
         UserIdentityModel.username == vote.voter
     ).first()
@@ -153,8 +136,8 @@ def cast_vote(vote: VoteCreate, db: Session = Depends(get_db)):
     if not identity:
         raise HTTPException(status_code=404, detail="Voter identity not found")
     
-    # Calculate weighted vote using quadratic scaling
-    vote_weight = calculate_quadratic_vote_weight(identity.reputation_score)
+    # Each identity counts as one vote
+    vote_weight = 1.0
     
     # Record vote
     new_vote = VoteModel(

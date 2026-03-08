@@ -33,16 +33,14 @@ def sample_identity():
     return {
         "username": "test_user",
         "public_key": "test_public_key",
-        "verified": False,
-        "reputation_score": 0.0
+        "verified": False
     }
 
 @pytest.fixture
 def sample_attestation():
     """Sample attestation data for testing."""
     return {
-        "from_user": "alice",
-        "to_user": "bob",
-        "value": 5,
-        "context": "Delivered product on time"
+        "issuer": "alice",
+        "subject": "bob",
+        "attestation_type": "delivered_on_time"
     }

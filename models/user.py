@@ -3,41 +3,36 @@ from datetime import datetime
 from typing import List, Optional
 
 class AttestationIn(BaseModel):
-    from_user: str
-    to_user: str
-    value: int
-    context: str
+    issuer: str
+    subject: str
+    attestation_type: str
     signature: Optional[str] = None
-    mutual_validation: Optional[str] = None
+    anchor: Optional[str] = None
 
 class AttestationOut(BaseModel):
     id: int
-    from_user: str
-    to_user: str
-    value: int
-    context: str
+    issuer: str
+    subject: str
+    attestation_type: str
     timestamp: datetime
     signature: Optional[str] = None
-    mutual_validation: Optional[str] = None
-    weight: float = 1.0
+    anchor: Optional[str] = None
 
     model_config = {"from_attributes": True}
 
-class UserReputation(BaseModel):
+class UserAttestations(BaseModel):
     user: str
-    reputation: float  # Weighted reputation score
     attestations: List[AttestationOut]
-    
+
 class UserIdentity(BaseModel):
     username: str
     public_key: str
     verified: bool = False
-    reputation_score: float = 0.0
 
 class UserIdentityCreate(BaseModel):
     username: str
-    
+
 class ZKProof(BaseModel):
     proof: str
-    threshold: float
+    threshold: int
     verified: bool

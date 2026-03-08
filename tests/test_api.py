@@ -49,53 +49,53 @@ def test_get_identity():
     data = response.json()
     assert data["username"] == "test_user_3"
     assert "public_key" in data
+    assert "reputation_score" not in data
 
 def test_create_attestation():
-    """Test creating an attestation."""
+    """Test creating a binary attestation."""
     response = client.post(
         "/attest",
         json={
-            "from_user": "alice",
-            "to_user": "bob",
-            "value": 5,
-            "context": "Test attestation"
+            "issuer": "alice",
+            "subject": "bob",
+            "attestation_type": "peer_verified"
         }
     )
     assert response.status_code == 200
     data = response.json()
-    assert data["from_user"] == "alice"
-    assert data["to_user"] == "bob"
-    assert data["value"] == 5
+    assert data["issuer"] == "alice"
+    assert data["subject"] == "bob"
+    assert data["attestation_type"] == "peer_verified"
+    assert "value" not in data
+    assert "weight" not in data
 
-def test_get_user_reputation():
-    """Test getting user reputation."""
+def test_get_user_attestations():
+    """Test getting user attestations (binary model, no reputation score)."""
     # Create some attestations
     client.post(
         "/attest",
         json={
-            "from_user": "alice",
-            "to_user": "user_rep_test",
-            "value": 5,
-            "context": "Good work"
+            "issuer": "alice",
+            "subject": "user_att_test",
+            "attestation_type": "good_work"
         }
     )
     
     client.post(
         "/attest",
         json={
-            "from_user": "bob",
-            "to_user": "user_rep_test",
-            "value": 3,
-            "context": "Nice job"
+            "issuer": "bob",
+            "subject": "user_att_test",
+            "attestation_type": "nice_job"
         }
     )
     
-    # Get reputation
-    response = client.get("/user/user_rep_test")
+    # Get attestations
+    response = client.get("/user/user_att_test")
     assert response.status_code == 200
     data = response.json()
-    assert data["user"] == "user_rep_test"
-    assert data["reputation"] >= 0
+    assert data["user"] == "user_att_test"
+    assert "reputation" not in data
     assert len(data["attestations"]) == 2
 
 def test_create_governance_proposal():
@@ -124,8 +124,8 @@ def test_list_governance_proposals():
     data = response.json()
     assert isinstance(data, list)
 
-def test_prove_reputation_threshold():
-    """Test zero-knowledge proof of reputation threshold."""
+def test_prove_attestation_threshold():
+    """Test zero-knowledge proof of attestation count threshold."""
     # Create identity
     client.post("/identity/create", json={"username": "zk_test_user"})
     
@@ -133,7 +133,7 @@ def test_prove_reputation_threshold():
         "/privacy/prove-threshold",
         json={
             "username": "zk_test_user",
-            "threshold": 10.0
+            "threshold": 5
         }
     )
     assert response.status_code == 200
@@ -171,3 +171,4 @@ def test_import_third_party_attestation():
     data = response.json()
     assert data["platform"] == "github"
     assert data["verified"] == 0  # Pending verification
+    assert "weight" not in data

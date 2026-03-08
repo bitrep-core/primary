@@ -1,20 +1,20 @@
-# Zero-knowledge proof utilities for privacy-preserving reputation verification
+# Zero-knowledge proof utilities for privacy-preserving attestation verification
 
 import hashlib
 import json
 import secrets
 from typing import Tuple
 
-def generate_zk_proof(reputation: float, threshold: float, salt: str = None) -> Tuple[str, bool]:
+def generate_zk_proof(attestation_count: int, threshold: int, salt: str = None) -> Tuple[str, bool]:
     """
-    Generate a zero-knowledge proof that reputation exceeds threshold.
+    Generate a zero-knowledge proof that a user's attestation count meets a threshold.
     This is a simplified ZK proof for demonstration.
     
     In production, use proper ZK-SNARK libraries like libsnark or circom.
     
     Args:
-        reputation: User's actual reputation score
-        threshold: Minimum reputation threshold to prove
+        attestation_count: Number of attestations the user has received
+        threshold: Minimum attestation count threshold to prove
         salt: Random salt for proof generation
         
     Returns:
@@ -23,8 +23,8 @@ def generate_zk_proof(reputation: float, threshold: float, salt: str = None) -> 
     if salt is None:
         salt = secrets.token_hex(32)
     
-    # Check if reputation meets threshold
-    meets_threshold = reputation >= threshold
+    # Check if attestation count meets threshold
+    meets_threshold = attestation_count >= threshold
     
     # Generate proof hash (simplified)
     # In real ZK proofs, this would be a cryptographic commitment
